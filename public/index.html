@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Bot Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2rem;
+    }
+
+    .status-bar {
+      background: white;
+      border-radius: 10px;
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+    }
+
+    .status-indicator.connected {
+      background: #25d366;
+    }
+
+    .status-indicator.disconnected {
+      background: #ff5252;
+    }
+
+    .status-text {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .buttons-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background: white;
+      border: none;
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-icon {
+      font-size: 2rem;
+    }
+
+    .btn-help { border-left: 4px solid #2196f3; }
+    .btn-status { border-left: 4px solid #4caf50; }
+    .btn-verified { border-left: 4px solid #ff9800; }
+    .btn-weekly { border-left: 4px solid #9c27b0; }
+    .btn-moderation { border-left: 4px solid #f44336; }
+
+    .result-container {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      min-height: 200px;
+    }
+
+    .result-header {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .result-content {
+      color: #555;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.9rem;
+    }
+
+    .result-content.loading {
+      color: #999;
+      font-style: italic;
+    }
+
+    .result-content.error {
+      color: #ff5252;
+    }
+
+    .moderation-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .moderation-table th {
+      background: #f5f5f5;
+      padding: 10px 8px;
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .moderation-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+
+    .moderation-table tr:hover {
+      background: #f9f9f9;
+    }
+
+    .violation-tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .violation-spam { background: #fff3e0; color: #e65100; }
+    .violation-caps { background: #e3f2fd; color: #1565c0; }
+    .violation-links { background: #fce4ec; color: #c2185b; }
+    .violation-toxic { background: #ffebee; color: #c62828; }
+    .violation-sensitive { background: #f3e5f5; color: #7b1fa2; }
+
+    .restore-btn {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .restore-btn:hover {
+      background: #388e3c;
+    }
+
+    .restore-btn:disabled {
+      background: #bdbdbd;
+      cursor: not-allowed;
+    }
+
+    .restored-badge {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .message-preview {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #666;
+      font-style: italic;
+    }
+
+    .config-info {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 20px;
+      color: white;
+    }
+
+    .config-info h3 {
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .config-info p {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      margin: 5px 0;
+    }
+
+    .groups-list {
+      margin-top: 15px;
+    }
+
+    .groups-list h4 {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      opacity: 0.9;
+    }
+
+    .group-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+
+    .group-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .group-status.found {
+      background: #25d366;
+    }
+
+    .group-status.not-found {
+      background: #ff5252;
+    }
+
+    .group-name {
+      flex: 1;
+    }
+
+    .group-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WhatsApp Bot Dashboard</h1>
+
+    <div class="status-bar">
+      <div class="status-indicator" id="statusIndicator"></div>
+      <span class="status-text" id="statusText">Checking connection...</span>
+    </div>
+
+    <div class="buttons-container">
+      <button class="btn btn-weekly" onclick="executeCommand('weeklysummary')">
+        <span class="btn-icon">&#128200;</span>
+        <span>Weekly Summary</span>
+      </button>
+      <button class="btn btn-moderation" onclick="executeCommand('moderation-logs')">
+        <span class="btn-icon">&#128683;</span>
+        <span>Deleted Messages</span>
+      </button>
+    </div>
+
+    <div class="result-container">
+      <div class="result-header">Result</div>
+      <div class="result-content" id="resultContent">Click a button to execute a command...</div>
+    </div>
+
+    <div class="config-info">
+      <h3>Configuration</h3>
+      <p id="configInfo">Loading...</p>
+      <div class="groups-list" id="groupsList"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '';
+
+    async function checkStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/api/bot-status`);
+        const data = await response.json();
+
+        const indicator = document.getElementById('statusIndicator');
+        const text = document.getElementById('statusText');
+
+        if (data.connected) {
+          indicator.className = 'status-indicator connected';
+          text.textContent = `Connected as ${data.botNumber || 'Unknown'}`;
+        } else {
+          indicator.className = 'status-indicator disconnected';
+          text.textContent = 'Disconnected';
+        }
+
+        // Update config info
+        if (data.config) {
+          document.getElementById('configInfo').innerHTML = `
+            Verification timeout: ${data.config.verificationTimeout} minutes
+          `;
+
+          // Display monitored groups
+          const groupsList = document.getElementById('groupsList');
+          if (data.config.monitoredGroups && data.config.monitoredGroups.length > 0) {
+            let groupsHtml = '<h4>Monitored Groups:</h4>';
+            data.config.monitoredGroups.forEach(group => {
+              const statusClass = group.found ? 'found' : 'not-found';
+              const badge = group.found ? 'Active' : 'Not Found';
+              groupsHtml += `
+                <div class="group-item">
+                  <div class="group-status ${statusClass}"></div>
+                  <span class="group-name">${escapeHtml(group.name)}</span>
+                  <span class="group-badge">${badge}</span>
+                </div>
+              `;
+            });
+            groupsList.innerHTML = groupsHtml;
+          } else {
+            groupsList.innerHTML = '<p style="opacity: 0.7; font-size: 0.85rem;">No groups configured</p>';
+          }
+        }
+      } catch (error) {
+        const indicator = document.getElementById('statusIndicator');
+        const text = document.getElementById('statusText');
+        indicator.className = 'status-indicator disconnected';
+        text.textContent = 'Server not reachable';
+      }
+    }
+
+    async function executeCommand(command) {
+      const resultContent = document.getElementById('resultContent');
+      resultContent.className = 'result-content loading';
+      resultContent.textContent = 'Loading...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/${command}`);
+        const data = await response.json();
+
+        resultContent.className = 'result-content';
+
+        if (data.success) {
+          const result = formatResult(command, data.data || data);
+          // Use innerHTML for moderation logs and weekly summary (contains HTML)
+          if (command === 'moderation-logs' || command === 'weeklysummary') {
+            resultContent.innerHTML = result;
+          } else {
+            resultContent.textContent = result;
+          }
+        } else {
+          resultContent.className = 'result-content error';
+          resultContent.textContent = `Error: ${data.error}`;
+        }
+      } catch (error) {
+        resultContent.className = 'result-content error';
+        resultContent.textContent = `Error: ${error.message}`;
+      }
+    }
+
+    function formatResult(command, data) {
+      switch (command) {
+        case 'help':
+          return `Bot Commands\n` +
+            `============\n\n` +
+            `Available commands:\n` +
+            `  - Weekly Summary: Generate topic summary for monitored groups\n` +
+            `  - Deleted Messages: View messages deleted by moderation\n\n` +
+            `Configuration:\n` +
+            `  - Monitored groups: ${data.monitoredGroups}\n` +
+            `  - Verification timeout: ${data.verificationTimeout} minutes`;
+
+        case 'status':
+          if (data.length === 0) {
+            return 'No verified users yet.';
+          }
+          let statusResult = 'Verified Users by Group\n';
+          statusResult += '=======================\n\n';
+          data.forEach(stat => {
+            statusResult += `${stat.groupName}: ${stat.count} users\n`;
+          });
+          return statusResult;
+
+        case 'verified':
+          if (data.length === 0) {
+            return 'No verified users yet.';
+          }
+          let verifiedResult = 'Last 10 Verified Users\n';
+          verifiedResult += '======================\n\n';
+          data.forEach(user => {
+            verifiedResult += `${user.maskedPhone} in ${user.groupName}\n`;
+            verifiedResult += `  Verified: ${user.verifiedAt}\n\n`;
+          });
+          return verifiedResult;
+
+        case 'weeklysummary':
+          return formatWeeklySummary(data);
+
+        case 'moderation-logs':
+          if (!data || data.length === 0) {
+            return 'No deleted messages yet.';
+          }
+          return formatModerationTable(data);
+
+        default:
+          return JSON.stringify(data, null, 2);
+      }
+    }
+
+    function formatModerationTable(data) {
+      const violationLabels = {
+        'excessive_links': 'Excessive Links',
+        'excessive_caps': 'Excessive Caps',
+        'repeated_message': 'Repeated Message',
+        'toxic_content': 'Toxic Content',
+        'sensitive_topic': 'Sensitive Topic',
+        'sensitive_image': 'Sensitive Image'
+      };
+
+      const violationClasses = {
+        'excessive_links': 'violation-links',
+        'excessive_caps': 'violation-caps',
+        'repeated_message': 'violation-spam',
+        'toxic_content': 'violation-toxic',
+        'sensitive_topic': 'violation-sensitive',
+        'sensitive_image': 'violation-sensitive'
+      };
+
+      let html = `
+        <h3 style="margin-bottom: 15px; color: #333;">Messages Deleted by Bot</h3>
+        <table class="moderation-table">
+          <thead>
+            <tr>
+              <th>Date / Time</th>
+              <th>Group</th>
+              <th>User</th>
+              <th>Reason</th>
+              <th>Message</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      data.forEach(log => {
+        const date = new Date(log.timestamp);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        const violationLabel = violationLabels[log.violation_type] || log.violation_type;
+        const violationClass = violationClasses[log.violation_type] || 'violation-spam';
+
+        const maskedPhone = log.user_phone ?
+          (log.user_phone.length > 6 ?
+            log.user_phone.substring(0, 4) + '****' + log.user_phone.substring(log.user_phone.length - 2) :
+            '****') :
+          '****';
+
+        // Display name if available, otherwise show masked phone
+        const displayName = log.user_name ? log.user_name : maskedPhone;
+
+        const messagePreview = log.message_body ?
+          (log.message_body.length > 40 ? log.message_body.substring(0, 40) + '...' : log.message_body) :
+          '-';
+
+        const groupName = log.group_name || log.group_id || '-';
+
+        const actionButton = log.restored
+          ? '<span class="restored-badge">Restored</span>'
+          : `<button class="restore-btn" onclick="restoreMessage(${log.id})">Restore</button>`;
+
+        html += `
+          <tr>
+            <td>${dateStr}<br><small style="color:#888">${timeStr}</small></td>
+            <td>${escapeHtml(groupName)}</td>
+            <td>${escapeHtml(displayName)}<br><small style="color:#888">${maskedPhone}</small></td>
+            <td><span class="violation-tag ${violationClass}">${violationLabel}</span></td>
+            <td class="message-preview" title="${escapeHtml(log.message_body || '')}">${escapeHtml(messagePreview)}</td>
+            <td>${actionButton}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+        <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+          <p style="color: #888; font-size: 0.8rem; margin: 0;">
+            Showing last ${data.length} deleted messages
+          </p>
+          <button onclick="clearModerationLogs()" style="
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+          ">Clear All Logs</button>
+        </div>
+      `;
+
+      return html;
+    }
+
+    function formatWeeklySummary(data) {
+      if (!data.summaries || data.summaries.length === 0) {
+        return '<p>No summary data available. Make sure there are messages in the monitored groups.</p>';
+      }
+
+      let html = `
+        <h3 style="margin-bottom: 20px; color: #333;">Weekly Summary - Last 7 Days</h3>
+      `;
+
+      data.summaries.forEach(group => {
+        html += `
+          <div style="background: #f9f9f9; border-radius: 10px; padding: 15px; margin-bottom: 15px; border-left: 4px solid #9c27b0;">
+            <p style="margin: 0 0 10px 0;"><strong>Group:</strong> ${escapeHtml(group.group_name)}</p>
+            <p style="margin: 0 0 10px 0;"><strong>Summary:</strong> ${escapeHtml(group.summary)}</p>
+            <p style="margin: 0 0 5px 0;"><strong>Messages:</strong> ${group.total_messages || 0}</p>
+            <p style="margin: 0;"><strong>Users:</strong> ${group.unique_users || 0}</p>
+          </div>
+        `;
+      });
+
+      html += `
+        <p style="margin-top: 15px; color: #888; font-size: 0.8rem;">
+          Generated: ${new Date().toLocaleString('en-US')}
+        </p>
+      `;
+
+      return html;
+    }
+
+    async function clearModerationLogs() {
+      if (!confirm('Are you sure you want to delete all moderation logs? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/clear-moderation-logs', { method: 'POST' });
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById('resultContent').innerHTML = '<p style="color: #4caf50; font-weight: 500;">All moderation logs have been cleared.</p>';
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function restoreMessage(logId) {
+      if (!confirm('Are you sure you want to restore this message? It will be resent to the group.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/restore-message/${logId}`, { method: 'POST' });
+        const data = await response.json();
+
+        if (data.success) {
+          alert('Message restored successfully!');
+          // Refresh the moderation logs
+          executeCommand('moderation-logs');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Check status on load and every 30 seconds
+    checkStatus();
+    setInterval(checkStatus, 30000);
+  </script>
+</body>
+</html>

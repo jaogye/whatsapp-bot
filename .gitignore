@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+
+# Database
+bot_data.sqlite
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Configuration with sensitive data
+config.json
+
+# WhatsApp session data
+auth_info/
+auth_info_backup*/
+
+# Generated files
+public/dashboard.html
+data/weekly_summary.json
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+.claude/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Python virtual environment
+venv/
+__pycache__/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Development notes
+prompts.txt
+*.bak
+
+# Unused/deprecated files
+captcha.js

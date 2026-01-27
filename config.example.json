@@ -1,0 +1,11 @@
+{
+  "admins": [
+    "1234567890"
+  ],
+  "groupsToMonitor": [
+    "Your WhatsApp Group Name 1",
+    "Your WhatsApp Group Name 2"
+  ],
+  "verificationTimeoutMinutes": 5,
+  "openaiApiKey": "sk-proj-your-openai-api-key-here"
+}
