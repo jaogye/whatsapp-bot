@@ -1,6 +1,10 @@
 const OpenAI = require('openai');
 const db = require('./db');
 const config = require('./config.json');
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -17,12 +21,12 @@ const SPAM_CONFIG = {
 };
 
 // Sensitive topics that should be moderated
+// NOTE: Keyword detection is currently disabled, this list is kept for reference
 const SENSITIVE_TOPICS = [
   'politics', 'politicians', 'political parties', 'elections', 'voting', 'government',
   'religion', 'religious', 'god', 'church', 'mosque', 'temple', 'bible', 'quran', 'conversion',
   'caste', 'reservation', 'dalit', 'brahmin', 'caste system', 'untouchable',
   'feminism', 'feminist', 'men\'s rights', 'gender war', 'patriarchy', 'misogyny', 'misandry',
-  'lgbtq', 'lgbt', 'gay', 'lesbian', 'transgender', 'trans rights', 'same-sex marriage', 'homosexual',
   'racism', 'racist', 'skin color', 'north india', 'south india', 'regionalism', 'ethnic',
   'vaccine', 'covid', 'corona', '5g', 'conspiracy', 'big pharma', 'anti-vax', 'microchip',
   'abortion', 'pro-life', 'pro-choice', 'prolife', 'prochoice'
@@ -155,15 +159,15 @@ async function checkSensitiveContent(message) {
       messages: [
         {
           role: 'system',
-          content: `You are a content moderator. Analyze if the message contains any of these sensitive topics:
+          content: `You are a content moderator. Analyze if the message contains any of these sensitive or prohibited topics:
 1. Politics / politicians / parties / elections
 2. Religion / religious figures / practices / conversions
 3. Castes / reservation system / caste-based content
 4. Gender wars / feminism vs. men's rights
-5. LGBTQ+ topics / transgender rights / same-sex marriage
-6. Racism / skin color / regionalism / ethnic stereotypes
-7. Vaccines / COVID / 5G / pharmaceutical conspiracy theories
-8. Abortion / pro-life vs. pro-choice
+5. Racism / skin color / regionalism / ethnic stereotypes
+6. Vaccines / COVID / 5G / pharmaceutical conspiracy theories
+7. Abortion / pro-life vs. pro-choice
+8. Scams and fraud: AI romance scams, catfishing, fake investments, crypto scams, pig butchering, HYIP schemes, fake online stores, unrealistic discounts, phishing, identity theft, impersonation, BEC, voice cloning, fake job offers, task scams, employment scams, fake giveaways, fake lotteries, non-existent prizes, deepfake scams, recovery scams, fake immigration help, fake charity, malicious ads
 
 Respond with JSON only: {"flagged": true/false, "topic": "topic name or null", "confidence": 0.0-1.0}`
         },
@@ -230,15 +234,17 @@ async function analyzeImage(imageBuffer, mimeType = 'image/jpeg') {
       messages: [
         {
           role: 'system',
-          content: `You are a content moderator analyzing images. Check if the image contains any of these sensitive topics:
+          content: `You are a content moderator analyzing images. Check if the image contains any of these prohibited content types:
 1. Politics / politicians / political parties / elections / campaigns
 2. Religion / religious figures / religious practices / conversions
 3. Castes / reservation system / caste-based content
 4. Gender wars / feminism vs. men's rights content
-5. LGBTQ+ topics / transgender rights / same-sex marriage symbols
-6. Racism / skin color discrimination / regionalism / ethnic stereotypes
-7. Vaccines / COVID / 5G / pharmaceutical conspiracy theories
-8. Abortion / pro-life vs. pro-choice imagery
+5. Racism / skin color discrimination / regionalism / ethnic stereotypes
+6. Vaccines / COVID / 5G / pharmaceutical conspiracy theories
+7. Abortion / pro-life vs. pro-choice imagery
+8. Medical/graphic content: blood, wounds, injuries, bruises, bumps, trauma, gore
+9. Commercial advertising: products for sale, services promotion, business ads, sales posts
+10. Scams and fraud imagery: fake investment promotions, crypto scams, get-rich-quick schemes, fake giveaways, lottery scams, phishing attempts, fake job offers, deepfake content, fake charity appeals, too-good-to-be-true offers, suspicious money transfer requests, fake online store promotions
 
 Respond with JSON only:
 {
@@ -298,6 +304,354 @@ Respond with JSON only:
     return null;
   } catch (error) {
     console.error('[MODERATION] OpenAI Vision API error:', error.message);
+    return null;
+  }
+}
+
+// Content moderation prompt for video/GIF analysis (same categories as images)
+const VIDEO_MODERATION_PROMPT = `You are a content moderator analyzing video frames. Check if ANY of the frames contain these prohibited content types:
+1. Politics / politicians / political parties / elections / campaigns
+2. Religion / religious figures / religious practices / conversions
+3. Castes / reservation system / caste-based content
+4. Gender wars / feminism vs. men's rights content
+5. Racism / skin color discrimination / regionalism / ethnic stereotypes
+6. Vaccines / COVID / 5G / pharmaceutical conspiracy theories
+7. Abortion / pro-life vs. pro-choice imagery
+8. Medical/graphic content: blood, wounds, injuries, bruises, bumps, trauma, gore
+9. Commercial advertising: products for sale, services promotion, business ads, sales posts
+10. Scams and fraud imagery: fake investment promotions, crypto scams, get-rich-quick schemes, fake giveaways, lottery scams, phishing attempts, fake job offers, deepfake content, fake charity appeals, too-good-to-be-true offers, suspicious money transfer requests, fake online store promotions
+
+Analyze ALL frames together as they represent a video/GIF. If ANY frame contains prohibited content, flag it.
+
+Respond with JSON only:
+{
+  "flagged": true/false,
+  "topic": "topic name if flagged, null otherwise",
+  "description": "brief 10-15 word description of what the video/GIF shows",
+  "confidence": 0.0-1.0
+}`;
+
+/**
+ * Extract frames from a video file using ffmpeg
+ * @param {Buffer} videoBuffer - Video data as buffer
+ * @param {number} numFrames - Number of frames to extract (default 4)
+ * @returns {Promise<Buffer[]>} Array of frame buffers as JPEG
+ */
+async function extractVideoFrames(videoBuffer, numFrames = 4) {
+  const tempDir = os.tmpdir();
+  const tempVideoPath = path.join(tempDir, `video_${Date.now()}.mp4`);
+  const framePattern = path.join(tempDir, `frame_${Date.now()}_%d.jpg`);
+  const frames = [];
+
+  try {
+    // Write video buffer to temp file
+    fs.writeFileSync(tempVideoPath, videoBuffer);
+
+    // Get video duration first
+    const duration = await new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(tempVideoPath, (err, metadata) => {
+        if (err) reject(err);
+        else resolve(metadata.format.duration || 5);
+      });
+    });
+
+    // Calculate frame extraction timestamps
+    const interval = duration / (numFrames + 1);
+    const timestamps = [];
+    for (let i = 1; i <= numFrames; i++) {
+      timestamps.push(interval * i);
+    }
+
+    // Extract frames at calculated timestamps
+    await new Promise((resolve, reject) => {
+      let command = ffmpeg(tempVideoPath)
+        .outputOptions([
+          '-vf', `select='${timestamps.map((t, i) => `eq(n\\,${Math.floor(t * 30)})`).join('+')}',scale=512:-1`,
+          '-vsync', 'vfr',
+          '-frames:v', numFrames.toString(),
+          '-q:v', '2'
+        ])
+        .output(framePattern)
+        .on('end', resolve)
+        .on('error', (err) => {
+          // Fallback: extract frames at regular intervals
+          ffmpeg(tempVideoPath)
+            .outputOptions([
+              '-vf', `fps=1/${Math.max(1, Math.floor(duration / numFrames))},scale=512:-1`,
+              '-frames:v', numFrames.toString(),
+              '-q:v', '2'
+            ])
+            .output(framePattern)
+            .on('end', resolve)
+            .on('error', reject)
+            .run();
+        });
+      command.run();
+    });
+
+    // Read extracted frames
+    for (let i = 1; i <= numFrames; i++) {
+      const framePath = path.join(tempDir, `frame_${Date.now() - (Date.now() % 1000)}_${i}.jpg`)
+        .replace(`_${i}.jpg`, `_${i}.jpg`);
+
+      // Try to find the frame file
+      const files = fs.readdirSync(tempDir).filter(f =>
+        f.startsWith(`frame_`) && f.endsWith('.jpg')
+      );
+
+      for (const file of files) {
+        const filePath = path.join(tempDir, file);
+        if (fs.existsSync(filePath)) {
+          const frameBuffer = fs.readFileSync(filePath);
+          frames.push(frameBuffer);
+          fs.unlinkSync(filePath); // Clean up
+        }
+      }
+      break; // Only need to scan once
+    }
+
+    // Clean up temp video file
+    if (fs.existsSync(tempVideoPath)) {
+      fs.unlinkSync(tempVideoPath);
+    }
+
+    return frames;
+  } catch (error) {
+    // Clean up on error
+    if (fs.existsSync(tempVideoPath)) {
+      fs.unlinkSync(tempVideoPath);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Extract frames from a GIF file
+ * @param {Buffer} gifBuffer - GIF data as buffer
+ * @param {number} numFrames - Number of frames to extract (default 4)
+ * @returns {Promise<Buffer[]>} Array of frame buffers as JPEG
+ */
+async function extractGifFrames(gifBuffer, numFrames = 4) {
+  const tempDir = os.tmpdir();
+  const tempGifPath = path.join(tempDir, `gif_${Date.now()}.gif`);
+  const framePattern = path.join(tempDir, `gifframe_${Date.now()}_%d.jpg`);
+  const frames = [];
+
+  try {
+    // Write GIF buffer to temp file
+    fs.writeFileSync(tempGifPath, gifBuffer);
+
+    // Use ffmpeg to extract frames from GIF
+    await new Promise((resolve, reject) => {
+      ffmpeg(tempGifPath)
+        .outputOptions([
+          '-vf', `select='not(mod(n\\,5))',scale=512:-1`, // Select every 5th frame
+          '-frames:v', numFrames.toString(),
+          '-q:v', '2'
+        ])
+        .output(framePattern)
+        .on('end', resolve)
+        .on('error', reject)
+        .run();
+    });
+
+    // Read extracted frames
+    const files = fs.readdirSync(tempDir)
+      .filter(f => f.startsWith(`gifframe_`) && f.endsWith('.jpg'))
+      .sort();
+
+    for (const file of files.slice(0, numFrames)) {
+      const filePath = path.join(tempDir, file);
+      if (fs.existsSync(filePath)) {
+        frames.push(fs.readFileSync(filePath));
+        fs.unlinkSync(filePath); // Clean up
+      }
+    }
+
+    // Clean up temp GIF file
+    if (fs.existsSync(tempGifPath)) {
+      fs.unlinkSync(tempGifPath);
+    }
+
+    return frames;
+  } catch (error) {
+    // Clean up on error
+    if (fs.existsSync(tempGifPath)) {
+      fs.unlinkSync(tempGifPath);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Analyze video for sensitive content using OpenAI Vision API
+ * @param {Buffer} videoBuffer - Video data as buffer
+ * @param {string} mimeType - Video MIME type
+ * @returns {Promise<Object|null>} Detection result or null
+ */
+async function analyzeVideo(videoBuffer, mimeType = 'video/mp4') {
+  if (!videoBuffer) return null;
+  if (!config.openaiApiKey) {
+    console.log('[MODERATION] OpenAI API key not configured, skipping video analysis');
+    return null;
+  }
+
+  try {
+    console.log('[MODERATION] Extracting frames from video...');
+    const frames = await extractVideoFrames(videoBuffer, 4);
+
+    if (frames.length === 0) {
+      console.log('[MODERATION] Could not extract frames from video');
+      return null;
+    }
+
+    console.log(`[MODERATION] Analyzing ${frames.length} video frames...`);
+
+    // Build content array with all frames
+    const imageContent = frames.map(frame => ({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${frame.toString('base64')}`,
+        detail: 'low'
+      }
+    }));
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: VIDEO_MODERATION_PROMPT
+        },
+        {
+          role: 'user',
+          content: [
+            ...imageContent,
+            {
+              type: 'text',
+              text: `Analyze these ${frames.length} frames extracted from a video for sensitive or prohibited content.`
+            }
+          ]
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 200
+    });
+
+    const responseText = response.choices[0].message.content.trim();
+    let result;
+
+    try {
+      let jsonStr = responseText;
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '');
+      }
+      result = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error('[MODERATION] Could not parse video analysis response:', responseText);
+      return null;
+    }
+
+    if (result.flagged && result.confidence > 0.6) {
+      return {
+        type: 'sensitive_video',
+        reason: `Video contains sensitive topic: ${result.topic}`,
+        severity: 'high',
+        topic: result.topic,
+        description: result.description || 'Sensitive video content',
+        confidence: result.confidence
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[MODERATION] Video analysis error:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Analyze GIF for sensitive content using OpenAI Vision API
+ * @param {Buffer} gifBuffer - GIF data as buffer
+ * @returns {Promise<Object|null>} Detection result or null
+ */
+async function analyzeGif(gifBuffer) {
+  if (!gifBuffer) return null;
+  if (!config.openaiApiKey) {
+    console.log('[MODERATION] OpenAI API key not configured, skipping GIF analysis');
+    return null;
+  }
+
+  try {
+    console.log('[MODERATION] Extracting frames from GIF...');
+    const frames = await extractGifFrames(gifBuffer, 4);
+
+    if (frames.length === 0) {
+      console.log('[MODERATION] Could not extract frames from GIF');
+      return null;
+    }
+
+    console.log(`[MODERATION] Analyzing ${frames.length} GIF frames...`);
+
+    // Build content array with all frames
+    const imageContent = frames.map(frame => ({
+      type: 'image_url',
+      image_url: {
+        url: `data:image/jpeg;base64,${frame.toString('base64')}`,
+        detail: 'low'
+      }
+    }));
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: VIDEO_MODERATION_PROMPT
+        },
+        {
+          role: 'user',
+          content: [
+            ...imageContent,
+            {
+              type: 'text',
+              text: `Analyze these ${frames.length} frames extracted from a GIF for sensitive or prohibited content.`
+            }
+          ]
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 200
+    });
+
+    const responseText = response.choices[0].message.content.trim();
+    let result;
+
+    try {
+      let jsonStr = responseText;
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '');
+      }
+      result = JSON.parse(jsonStr);
+    } catch (e) {
+      console.error('[MODERATION] Could not parse GIF analysis response:', responseText);
+      return null;
+    }
+
+    if (result.flagged && result.confidence > 0.6) {
+      return {
+        type: 'sensitive_gif',
+        reason: `GIF contains sensitive topic: ${result.topic}`,
+        severity: 'high',
+        topic: result.topic,
+        description: result.description || 'Sensitive GIF content',
+        confidence: result.confidence
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[MODERATION] GIF analysis error:', error.message);
     return null;
   }
 }
@@ -383,11 +737,8 @@ async function moderateMessage(message, senderPhone, groupId) {
     return spamResult;
   }
 
-  // Quick check for sensitive keywords
-  const keywordResult = checkSensitiveKeywords(message);
-  if (keywordResult) {
-    return keywordResult;
-  }
+  // NOTE: Keyword-based sensitive topic detection has been disabled
+  // AI-based detection (checkSensitiveContent) is still active below
 
   // Then check for toxic content
   const toxicResult = await checkToxicContent(message);
@@ -499,6 +850,8 @@ module.exports = {
   checkSensitiveContent,
   checkToxicContent,
   analyzeImage,
+  analyzeVideo,
+  analyzeGif,
   moderateMessage,
   formatAdminAlert,
   createAdminButtons,

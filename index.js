@@ -23,6 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Store socket reference globally
 let sock = null;
 let botNumber = null;
+let botLid = null; // Bot's Linked ID for group participant matching
 
 // Cache for group name -> ID mapping
 let groupNameToId = {};
@@ -36,7 +37,7 @@ app.get('/api/bot-status', (req, res) => {
     id: groupNameToId[name.toLowerCase()] || null,
     found: !!groupNameToId[name.toLowerCase()]
   }));
-
+  
   res.json({
     connected: sock !== null && botNumber !== null,
     botNumber: botNumber || null,
@@ -317,9 +318,45 @@ async function buildGroupMapping() {
         if (primaryAdminJid) {
           try {
             const groupMetadata = await sock.groupMetadata(groupId);
-            const adminParticipant = groupMetadata.participants.find(p =>
-              p.id === primaryAdminJid || jidToPhone(p.id) === primaryAdmin
-            );
+            const normalizedPrimaryAdmin = normalizePhone(primaryAdmin);
+
+            // Check if primary admin is the bot itself
+            const isPrimaryAdminTheBot = normalizePhone(botNumber) === normalizedPrimaryAdmin;
+
+            // Find admin participant - use LID if available, otherwise try phone matching
+            let adminParticipant = null;
+
+            if (isPrimaryAdminTheBot && botLid) {
+              // If primary admin is the bot, match using bot's LID
+              adminParticipant = groupMetadata.participants.find(p => p.id === botLid);
+            }
+
+            if (!adminParticipant) {
+              // Try matching by JID or phone number (for non-LID formats)
+              adminParticipant = groupMetadata.participants.find(p => {
+                // Check if it's a LID format
+                if (p.id.endsWith('@lid')) {
+                  // For LID format, we can only match if we have the LID
+                  if (isPrimaryAdminTheBot && botLid) {
+                    return p.id === botLid;
+                  }
+                  return false;
+                }
+                // Standard JID format
+                return p.id === primaryAdminJid || normalizePhone(jidToPhone(p.id)) === normalizedPrimaryAdmin;
+              });
+            }
+
+            // If still not found and primary admin is the bot, try to find bot by checking all admins
+            if (!adminParticipant && isPrimaryAdminTheBot) {
+              // The bot should be able to find itself - check superadmin first
+              const superAdmin = groupMetadata.participants.find(p => p.admin === 'superadmin');
+              if (superAdmin) {
+                // Assume the superadmin might be the bot if we're the primary admin
+                console.log(`[DEBUG] Bot LID not available, assuming superadmin ${superAdmin.id} is the bot`);
+                adminParticipant = superAdmin;
+              }
+            }
 
             if (adminParticipant && (adminParticipant.admin === 'admin' || adminParticipant.admin === 'superadmin')) {
               console.log(`[GROUPS] ✓ Primary admin (${primaryAdmin}) is admin of "${groupName}"`);
@@ -408,6 +445,16 @@ function jidToPhone(jid) {
 }
 
 /**
+ * Normalize phone number for comparison (removes +, spaces, dashes)
+ * @param {string} phone - Phone number
+ * @returns {string} Normalized phone number
+ */
+function normalizePhone(phone) {
+  if (!phone) return '';
+  return phone.replace(/[\+\s\-\(\)]/g, '');
+}
+
+/**
  * Format notification message for user whose message was deleted
  * @param {Object} moderationResult - Moderation result
  * @param {string} groupName - Group name
@@ -420,7 +467,9 @@ function formatUserNotification(moderationResult, groupName) {
     'repeated_message': 'is a repeated message (spam)',
     'toxic_content': 'contains inappropriate or toxic content',
     'sensitive_topic': 'contains a sensitive or controversial topic that is not allowed in this group',
-    'sensitive_image': 'contains an image with sensitive or controversial content that is not allowed in this group'
+    'sensitive_image': 'contains an image with sensitive or controversial content that is not allowed in this group',
+    'sensitive_video': 'contains a video with sensitive or controversial content that is not allowed in this group',
+    'sensitive_gif': 'contains a GIF with sensitive or controversial content that is not allowed in this group'
   };
 
   const reason = reasons[moderationResult.type] || moderationResult.reason;
@@ -498,9 +547,11 @@ async function startBot() {
     if (connection === 'open') {
       console.log('[READY] WhatsApp bot is connected!');
 
-      // Get bot's own number
+      // Get bot's own number and LID
       botNumber = jidToPhone(sock.user?.id);
+      botLid = sock.user?.lid || null;
       console.log(`[INFO] Bot number: ${botNumber}`);
+      console.log(`[INFO] Bot LID: ${botLid || 'not available'}`);
 
       // Build group name -> ID mapping
       await buildGroupMapping();
@@ -622,13 +673,21 @@ async function startBot() {
           message.message.extendedTextMessage?.text ||
           '';
 
-        // Check if message contains an image
+        // Check if message contains media (image, video, or GIF)
         const imageMessage = message.message.imageMessage ||
           message.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-        const hasImage = !!imageMessage;
+        const videoMessage = message.message.videoMessage ||
+          message.message.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage;
+        // GIFs in WhatsApp are sent as videoMessage with gifPlayback flag
+        const isGif = videoMessage?.gifPlayback === true;
 
-        // Skip if no text and no image
-        if (!messageText && !hasImage) continue;
+        const hasImage = !!imageMessage;
+        const hasVideo = !!videoMessage && !isGif;
+        const hasGif = !!videoMessage && isGif;
+        const hasMedia = hasImage || hasVideo || hasGif;
+
+        // Skip if no text and no media
+        if (!messageText && !hasMedia) continue;
 
         // Get group name from config (fallback to WhatsApp metadata)
         let groupName = getGroupNameFromConfig(remoteJid);
@@ -655,7 +714,25 @@ async function startBot() {
         let isGroupAdmin = false;
         try {
           const groupMetadata = await sock.groupMetadata(remoteJid);
-          const participant = groupMetadata.participants.find(p => p.id === senderJid || jidToPhone(p.id) === senderPhone);
+          const normalizedSenderPhone = normalizePhone(senderPhone);
+
+          // Find participant - handle both LID and standard JID formats
+          const participant = groupMetadata.participants.find(p => {
+            // Direct JID match (works for both LID and standard format)
+            if (p.id === senderJid) return true;
+
+            // For non-LID formats, try phone matching
+            if (!p.id.endsWith('@lid')) {
+              return normalizePhone(jidToPhone(p.id)) === normalizedSenderPhone;
+            }
+
+            // For LID format, check if sender is the bot
+            if (p.id.endsWith('@lid') && botLid && p.id === botLid) {
+              return normalizePhone(botNumber) === normalizedSenderPhone;
+            }
+
+            return false;
+          });
           if (participant && (participant.admin === 'admin' || participant.admin === 'superadmin')) {
             isGroupAdmin = true;
             console.log(`[MODERATION] Skipping moderation for group admin: ${maskPhone(senderPhone)}`);
@@ -684,7 +761,38 @@ async function startBot() {
             }
           }
 
-          // If no image violation, check text
+          // Check GIF if present (and no image violation)
+          if (!moderationResult && hasGif) {
+            try {
+              console.log(`[MODERATION] Analyzing GIF from ${maskPhone(senderPhone)}...`);
+              const gifBuffer = await downloadMediaMessage(message, 'buffer', {});
+              moderationResult = await moderation.analyzeGif(gifBuffer);
+
+              if (moderationResult) {
+                console.log(`[MODERATION] GIF violation: ${moderationResult.description}`);
+              }
+            } catch (gifError) {
+              console.error('[MODERATION] Could not analyze GIF:', gifError.message);
+            }
+          }
+
+          // Check video if present (and no previous media violation)
+          if (!moderationResult && hasVideo) {
+            try {
+              console.log(`[MODERATION] Analyzing video from ${maskPhone(senderPhone)}...`);
+              const videoBuffer = await downloadMediaMessage(message, 'buffer', {});
+              const mimeType = videoMessage?.mimetype || 'video/mp4';
+              moderationResult = await moderation.analyzeVideo(videoBuffer, mimeType);
+
+              if (moderationResult) {
+                console.log(`[MODERATION] Video violation: ${moderationResult.description}`);
+              }
+            } catch (videoError) {
+              console.error('[MODERATION] Could not analyze video:', videoError.message);
+            }
+          }
+
+          // If no media violation, check text
           if (!moderationResult && messageText) {
             moderationResult = await moderation.moderateMessage(messageText, senderPhone, remoteJid);
           }
@@ -692,10 +800,15 @@ async function startBot() {
           if (moderationResult) {
             console.log(`[MODERATION] Violation detected: ${moderationResult.type} - ${moderationResult.reason}`);
 
-            // For images, use the description; for text, use the messageText
-            const logMessageBody = moderationResult.type === 'sensitive_image'
-              ? `[IMAGE] ${moderationResult.description}`
-              : messageText;
+            // For media, use the description; for text, use the messageText
+            let logMessageBody = messageText;
+            if (moderationResult.type === 'sensitive_image') {
+              logMessageBody = `[IMAGE] ${moderationResult.description}`;
+            } else if (moderationResult.type === 'sensitive_video') {
+              logMessageBody = `[VIDEO] ${moderationResult.description}`;
+            } else if (moderationResult.type === 'sensitive_gif') {
+              logMessageBody = `[GIF] ${moderationResult.description}`;
+            }
 
             // Log to database with message key for potential restoration
             const logId = db.logModeration({

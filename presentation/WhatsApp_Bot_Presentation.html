@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot - IHL Presentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #25D366;
+            --primary-dark: #128C7E;
+            --secondary: #075E54;
+            --accent: #34B7F1;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: white;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+            .page:last-child {
+                page-break-after: auto;
+            }
+        }
+
+        .page {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 50px;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Cover Page */
+        .cover {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-dark) 50%, var(--primary) 100%);
+            color: white;
+        }
+
+        .cover-logo {
+            width: 110px;
+            height: 110px;
+            background: white;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 35px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .cover-logo svg {
+            width: 65px;
+            height: 65px;
+        }
+
+        .cover h1 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            letter-spacing: -1px;
+        }
+
+        .cover .subtitle {
+            font-size: 1.4rem;
+            font-weight: 300;
+            opacity: 0.9;
+            margin-bottom: 45px;
+        }
+
+        .cover .tagline {
+            font-size: 1.05rem;
+            opacity: 0.8;
+            max-width: 580px;
+        }
+
+        .cover-footer {
+            position: absolute;
+            bottom: 45px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Section Headers */
+        .section-header {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 18px 28px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .section-number {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+
+        .section-title {
+            font-size: 1.7rem;
+            font-weight: 600;
+        }
+
+        /* Content Styles */
+        h3 {
+            color: var(--secondary);
+            font-size: 1.2rem;
+            margin: 25px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        p {
+            margin-bottom: 12px;
+            color: #444;
+            font-size: 0.95rem;
+        }
+
+        ul, ol {
+            margin: 12px 0 12px 22px;
+            font-size: 0.95rem;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        /* Agenda Grid */
+        .agenda-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin: 25px 0;
+        }
+
+        .agenda-item {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 22px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .agenda-number {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .agenda-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+
+        .agenda-desc {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* Architecture Image */
+        .architecture-img {
+            width: 100%;
+            max-width: 850px;
+            margin: 20px auto;
+            display: block;
+            border-radius: 12px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Tech Badges */
+        .tech-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 18px 0;
+        }
+
+        .tech-badge {
+            background: var(--primary);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .tech-badge.secondary {
+            background: var(--accent);
+        }
+
+        /* Feature Cards */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            gap: 18px;
+            align-items: flex-start;
+        }
+
+        .feature-icon {
+            font-size: 2.2rem;
+            flex-shrink: 0;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: var(--gray);
+            line-height: 1.6;
+        }
+
+        /* Moderation Table */
+        .mod-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        .mod-table th {
+            background: var(--secondary);
+            color: white;
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .mod-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .mod-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Deployment Comparison */
+        .deployment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .deployment-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .deployment-header {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .deployment-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .deployment-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .deployment-body {
+            padding: 20px;
+        }
+
+        .cost-section {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .cost-label {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+
+        .cost-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .cost-period {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .pros-cons h4 {
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .pros-cons ul {
+            margin: 0 0 12px 18px;
+            font-size: 0.8rem;
+        }
+
+        .pros-cons li {
+            margin-bottom: 4px;
+        }
+
+        .pros h4 { color: #2e7d32; }
+        .cons h4 { color: #c62828; }
+
+        /* Use Case Cards */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .usecase-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px 20px;
+            border-left: 4px solid var(--primary);
+            text-align: center;
+        }
+
+        .usecase-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .usecase-title {
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .usecase-desc {
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        /* Summary Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 25px 15px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 12px;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 50px;
+            right: 50px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--gray);
+            border-top: 1px solid #e9ecef;
+            padding-top: 12px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 12px;
+            padding: 22px;
+            margin: 20px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .highlight-box h4 {
+            color: var(--secondary);
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .highlight-box ul {
+            margin: 0 0 0 20px;
+            font-size: 0.9rem;
+        }
+
+        .highlight-box li {
+            margin-bottom: 8px;
+        }
+
+        /* Pipeline Steps */
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 22px 25px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .pipeline-number {
+            width: 42px;
+            height: 42px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .pipeline-content {
+            flex: 1;
+        }
+
+        .pipeline-title {
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1.05rem;
+            margin-bottom: 5px;
+        }
+
+        .pipeline-desc {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .pipeline-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-local {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .badge-ai {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        /* CTA Box */
+        .cta-box {
+            text-align: center;
+            margin-top: 30px;
+            padding: 35px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 16px;
+            color: white;
+        }
+
+        .cta-box h3 {
+            border: none;
+            color: white;
+            padding: 0;
+            margin-bottom: 12px;
+            font-size: 1.4rem;
+        }
+
+        .cta-box p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1rem;
+        }
+
+        @media print {
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .page { padding: 35px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Page 1: Cover -->
+    <div class="page cover">
+        <div class="cover-logo">
+            <svg viewBox="0 0 24 24" fill="#25D366">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+        </div>
+        <h1>WhatsApp Bot</h1>
+        <p class="subtitle">Intelligent Group Moderation Solution</p>
+        <p class="tagline">Automated content moderation, user verification, and analytics for WhatsApp groups - powered by AI</p>
+        <div class="cover-footer">IHL Presentation | 2026</div>
+    </div>
+
+    <!-- Page 2: Agenda -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Section 01</div>
+            <h2 class="section-title">Agenda</h2>
+        </div>
+
+        <p>This presentation provides a comprehensive overview of the WhatsApp Bot solution, covering its architecture, capabilities, and deployment options.</p>
+
+        <div class="agenda-grid">
+            <div class="agenda-item">
+                <div class="agenda-number">1</div>
+                <div class="agenda-title">System Architecture</div>
+                <div class="agenda-desc">Technical overview of components and technologies</div>
+            </div>
+            <div class="agenda-item">
+                <div class="agenda-number">2</div>
+                <div class="agenda-title">Bot Functionalities</div>
+                <div class="agenda-desc">Complete feature set and capabilities</div>
+            </div>
+            <div class="agenda-item">
+                <div class="agenda-number">3</div>
+                <div class="agenda-title">Moderation Pipeline</div>
+                <div class="agenda-desc">5-layer content analysis system</div>
+            </div>
+            <div class="agenda-item">
+                <div class="agenda-number">4</div>
+                <div class="agenda-title">Sensitive Topics</div>
+                <div class="agenda-desc">8 monitored content categories</div>
+            </div>
+            <div class="agenda-item">
+                <div class="agenda-number">5</div>
+                <div class="agenda-title">Deployment Options</div>
+                <div class="agenda-desc">Local, cloud, and mobile setups</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h4>Key Highlights</h4>
+            <ul>
+                <li><strong>Multi-layer AI-powered content moderation</strong> - Real-time analysis using OpenAI</li>
+                <li><strong>CAPTCHA-based user verification</strong> - Prevents bots and spam accounts</li>
+                <li><strong>Real-time web dashboard</strong> - Monitor status, logs, and analytics</li>
+                <li><strong>Weekly AI-generated reports</strong> - Trending topics and engagement metrics</li>
+                <li><strong>Flexible deployment</strong> - Run on local machine, cloud, or smartphone</li>
+            </ul>
+        </div>
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 2</span>
+        </div>
+    </div>
+
+    <!-- Page 3: Architecture -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Section 02</div>
+            <h2 class="section-title">System Architecture</h2>
+        </div>
+
+        <h3>Technology Stack</h3>
+        <div class="tech-badges">
+            <span class="tech-badge">Node.js 18+</span>
+            <span class="tech-badge">Baileys (WhatsApp Web)</span>
+            <span class="tech-badge">Express.js</span>
+            <span class="tech-badge secondary">SQLite3</span>
+            <span class="tech-badge secondary">OpenAI GPT-4o-mini</span>
+            <span class="tech-badge secondary">Vision API</span>
+            <span class="tech-badge secondary">Moderation API</span>
+        </div>
+
+        <h3>Architecture Diagram</h3>
+        <img src="../architecture.png" alt="WhatsApp Bot Architecture" class="architecture-img">
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 3</span>
+        </div>
+    </div>
+
+    <!-- Page 4: Functionalities -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Section 03</div>
+            <h2 class="section-title">Bot Functionalities</h2>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <div class="feature-content">
+                    <div class="feature-title">Intelligent Content Moderation</div>
+                    <div class="feature-desc">Multi-layer AI system that detects spam, toxic content, and sensitive topics in real-time. Automatically removes violations and notifies users.</div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <div class="feature-content">
+                    <div class="feature-title">CAPTCHA Verification</div>
+                    <div class="feature-desc">New members must solve an image-based CAPTCHA to stay in the group. Prevents bots and spam accounts. Multilingual support (EN/NL).</div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <div class="feature-content">
+                    <div class="feature-title">Web Dashboard</div>
+                    <div class="feature-desc">Real-time monitoring interface showing connection status, moderation logs, and group analytics. Accessible via browser at port 3000.</div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <div class="feature-content">
+                    <div class="feature-title">Weekly Analytics</div>
+                    <div class="feature-desc">AI-generated reports with trending topics, engagement metrics, most active days, and conversation summaries for each monitored group.</div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">↩️</div>
+                <div class="feature-content">
+                    <div class="feature-title">Message Restoration</div>
+                    <div class="feature-desc">Administrators can review and restore accidentally deleted messages through the dashboard. Full audit trail maintained for all actions.</div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <div class="feature-content">
+                    <div class="feature-title">Detailed Logging</div>
+                    <div class="feature-desc">Complete audit trail of all moderation actions including timestamps, violation types, and original message content for compliance review.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 4</span>
+        </div>
+    </div>
+
+    <!-- Page 5: Moderation Pipeline -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Section 04</div>
+            <h2 class="section-title">5-Layer Moderation Pipeline</h2>
+        </div>
+
+        <p>The bot uses a multi-layer moderation pipeline that processes messages in sequence, from fast local checks to advanced AI analysis.</p>
+
+        <div class="pipeline">
+            <div class="pipeline-step">
+                <div class="pipeline-number">1</div>
+                <div class="pipeline-content">
+                    <div class="pipeline-title">Spam Detection</div>
+                    <div class="pipeline-desc">Checks for excessive links (>3), caps ratio (>70%), and repeated messages within 60 seconds</div>
+                </div>
+                <span class="pipeline-badge badge-local">Local Rules</span>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-number">2</div>
+                <div class="pipeline-content">
+                    <div class="pipeline-title">Keyword Detection</div>
+                    <div class="pipeline-desc">Fast regex scan for 28 sensitive topic keywords across 8 categories</div>
+                </div>
+                <span class="pipeline-badge badge-local">Regex Scan</span>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-number">3</div>
+                <div class="pipeline-content">
+                    <div class="pipeline-title">Toxic Content Analysis</div>
+                    <div class="pipeline-desc">Detects hate speech, harassment, violence, self-harm, and explicit content</div>
+                </div>
+                <span class="pipeline-badge badge-ai">OpenAI Moderation</span>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-number">4</div>
+                <div class="pipeline-content">
+                    <div class="pipeline-title">Sensitive Topic Intelligence</div>
+                    <div class="pipeline-desc">GPT-4o-mini analyzes nuanced discussions with confidence scoring (>0.7 threshold)</div>
+                </div>
+                <span class="pipeline-badge badge-ai">GPT-4o-mini</span>
+            </div>
+            <div class="pipeline-step">
+                <div class="pipeline-number">5</div>
+                <div class="pipeline-content">
+                    <div class="pipeline-title">Image Content Analysis</div>
+                    <div class="pipeline-desc">Vision API scans images for policy violations with 0.6 confidence threshold</div>
+                </div>
+                <span class="pipeline-badge badge-ai">Vision API</span>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h4>Moderation Actions</h4>
+            <ul>
+                <li><strong>Message Deletion:</strong> Violating content is removed from the group immediately</li>
+                <li><strong>User Notification:</strong> Private message sent explaining the violation reason</li>
+                <li><strong>Audit Logging:</strong> Full details stored in database for review and restoration</li>
+                <li><strong>Admin Exemption:</strong> Group administrators bypass all moderation checks</li>
+            </ul>
+        </div>
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 5</span>
+        </div>
+    </div>
+
+    <!-- Page 6: Sensitive Topics -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Section 05</div>
+            <h2 class="section-title">8 Sensitive Topics Monitored</h2>
+        </div>
+
+        <p>The bot monitors and moderates discussions on these sensitive topic categories to maintain a respectful group environment:</p>
+
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <div class="usecase-icon">🏛️</div>
+                <div class="usecase-title">Politics</div>
+                <div class="usecase-desc">Politicians, parties, elections, voting, government discussions</div>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">⛪</div>
+                <div class="usecase-title">Religion</div>
+                <div class="usecase-desc">God, church, mosque, temple, bible, quran, conversion topics</div>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">👥</div>
+                <div class="usecase-title">Caste</div>
+                <div class="usecase-desc">Caste system, social divisions, reservation debates</div>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">⚧️</div>
+                <div class="usecase-title">Gender</div>
+                <div class="usecase-desc">Feminism debates, misogyny, patriarchy arguments</div>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">🏳️‍🌈</div>
+                <div class="usecase-title">LGBTQ+</div>
+                <div class="usecase-desc">Sexual orientation, same-sex marriage debates</div>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">🌍</div>
+                <div class="usecase-title">Racism</div>
+                <div class="usecase-desc">Skin color, regionalism, ethnic stereotypes</div>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">💉</div>
+                <div class="usecase-title">Health Misinfo</div>
+                <div class="usecase-desc">Anti-vax content, conspiracy theories, COVID misinformation</div>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-icon">⚖️</div>
+                <div class="usecase-title">Abortion</div>
+                <div class="usecase-desc">Pro-life vs pro-choice debates and related content</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h4>Detection Methods</h4>
+            <ul>
+                <li><strong>Keyword Matching:</strong> Fast regex scan for known trigger words and phrases</li>
+                <li><strong>AI Context Analysis:</strong> GPT-4o-mini understands nuanced discussions beyond simple keywords</li>
+                <li><strong>Image Recognition:</strong> Vision API detects sensitive content in shared images</li>
+                <li><strong>Confidence Thresholds:</strong> Configurable sensitivity levels to reduce false positives</li>
+            </ul>
+        </div>
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 6</span>
+        </div>
+    </div>
+
+    <!-- Page 7: Deployment Options -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Section 06</div>
+            <h2 class="section-title">Deployment Options & Costs</h2>
+        </div>
+
+        <p>The WhatsApp Bot can be deployed in three main configurations, each with different cost and operational characteristics.</p>
+
+        <div class="deployment-grid">
+            <div class="deployment-card">
+                <div class="deployment-header">
+                    <div class="deployment-icon">🖥️</div>
+                    <div class="deployment-name">Local Machine</div>
+                </div>
+                <div class="deployment-body">
+                    <div class="cost-section">
+                        <div class="cost-label">Monthly Cost</div>
+                        <div class="cost-value">$6-20</div>
+                        <div class="cost-period">Electricity + OpenAI</div>
+                    </div>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h4>✅ Advantages</h4>
+                            <ul>
+                                <li>No hosting fees</li>
+                                <li>Full data control</li>
+                                <li>Easy initial setup</li>
+                                <li>Direct log access</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>❌ Disadvantages</h4>
+                            <ul>
+                                <li>PC must run 24/7</li>
+                                <li>Electricity costs</li>
+                                <li>Manual restarts needed</li>
+                                <li>Internet dependency</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="deployment-card">
+                <div class="deployment-header" style="background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);">
+                    <div class="deployment-icon">☁️</div>
+                    <div class="deployment-name">Cloud Server</div>
+                </div>
+                <div class="deployment-body">
+                    <div class="cost-section">
+                        <div class="cost-label">Monthly Cost</div>
+                        <div class="cost-value">$6-25</div>
+                        <div class="cost-period">VPS + OpenAI</div>
+                    </div>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h4>✅ Advantages</h4>
+                            <ul>
+                                <li>24/7 guaranteed uptime</li>
+                                <li>Auto-restart on failure</li>
+                                <li>Remote access anywhere</li>
+                                <li>Scalable resources</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>❌ Disadvantages</h4>
+                            <ul>
+                                <li>Monthly hosting fees</li>
+                                <li>Technical setup required</li>
+                                <li>Data on third-party</li>
+                                <li>Server knowledge needed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="deployment-card">
+                <div class="deployment-header" style="background: linear-gradient(135deg, #7b1fa2 0%, #4a148c 100%);">
+                    <div class="deployment-icon">📱</div>
+                    <div class="deployment-name">Smartphone</div>
+                </div>
+                <div class="deployment-body">
+                    <div class="cost-section">
+                        <div class="cost-label">Monthly Cost</div>
+                        <div class="cost-value">$2-6</div>
+                        <div class="cost-period">OpenAI only</div>
+                    </div>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h4>✅ Advantages</h4>
+                            <ul>
+                                <li>Always connected</li>
+                                <li>Low power usage</li>
+                                <li>Portable solution</li>
+                                <li>No extra hardware</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>❌ Disadvantages</h4>
+                            <ul>
+                                <li>Limited processing</li>
+                                <li>Complex setup (Termux)</li>
+                                <li>Battery drain</li>
+                                <li>Storage constraints</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3>Recommended Setup by Use Case</h3>
+        <table class="mod-table">
+            <thead>
+                <tr>
+                    <th>Use Case</th>
+                    <th>Recommended</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Personal / Small Community</td>
+                    <td><strong>Local Machine</strong></td>
+                    <td>Simple setup, full control, minimal costs</td>
+                </tr>
+                <tr>
+                    <td>Business / Professional</td>
+                    <td><strong>Cloud Server</strong></td>
+                    <td>Reliability, multiple groups, remote management</td>
+                </tr>
+                <tr>
+                    <td>Testing / Development</td>
+                    <td><strong>Local Machine</strong></td>
+                    <td>Ideal for initial configuration before production</td>
+                </tr>
+                <tr>
+                    <td>Remote / Mobile Setup</td>
+                    <td><strong>Smartphone</strong></td>
+                    <td>Portability for tech-savvy users with limited resources</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 7</span>
+        </div>
+    </div>
+
+    <!-- Page 8: Appendix - Cost Analysis -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Appendix A</div>
+            <h2 class="section-title">OpenAI API Cost Analysis</h2>
+        </div>
+
+        <h3>Client Parameters</h3>
+        <table class="mod-table">
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>WhatsApp Groups</td>
+                    <td><strong>15 groups</strong></td>
+                </tr>
+                <tr>
+                    <td>Text Messages per Day per Group</td>
+                    <td>40 messages</td>
+                </tr>
+                <tr>
+                    <td>Average Message Size</td>
+                    <td>120 characters</td>
+                </tr>
+                <tr>
+                    <td>Images per Day per Group</td>
+                    <td>6 images</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Monthly Volume</h3>
+        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="stat-card">
+                <div class="stat-value">18,000</div>
+                <div class="stat-label">Text Messages/Month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2,700</div>
+                <div class="stat-label">Images/Month</div>
+            </div>
+        </div>
+
+        <h3>Moderation Pipeline & API Usage</h3>
+        <table class="mod-table">
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Function</th>
+                    <th>API</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Spam Detection</td>
+                    <td>Local rules</td>
+                    <td>Free</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Keyword Detection</td>
+                    <td>Local regex</td>
+                    <td>Free</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Toxic Content Check</td>
+                    <td>Moderation API</td>
+                    <td><strong>Free</strong></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Sensitive Topic Analysis</td>
+                    <td>GPT-4o-mini</td>
+                    <td>Per token</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Image Analysis</td>
+                    <td>GPT-4o-mini Vision</td>
+                    <td>Per token</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 8</span>
+        </div>
+    </div>
+
+    <!-- Page 9: Appendix - Cost Calculation -->
+    <div class="page">
+        <div class="section-header">
+            <div class="section-number">Appendix A (Continued)</div>
+            <h2 class="section-title">Monthly Cost Calculation</h2>
+        </div>
+
+        <h3>Token Consumption Estimate</h3>
+        <p>Assuming ~90% of messages pass local filters and have >20 characters:</p>
+
+        <table class="mod-table">
+            <thead>
+                <tr>
+                    <th>API Call Type</th>
+                    <th>Calls/Month</th>
+                    <th>Input Tokens</th>
+                    <th>Output Tokens</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Moderation API</td>
+                    <td>18,000</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>GPT-4o-mini (text)</td>
+                    <td>~16,200</td>
+                    <td>4,050,000</td>
+                    <td>810,000</td>
+                </tr>
+                <tr>
+                    <td>GPT-4o-mini Vision</td>
+                    <td>2,700</td>
+                    <td>1,039,500</td>
+                    <td>270,000</td>
+                </tr>
+                <tr style="background: #e8f5e9; font-weight: 600;">
+                    <td><strong>TOTAL</strong></td>
+                    <td>36,900</td>
+                    <td>5,089,500</td>
+                    <td>1,080,000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Cost Breakdown (GPT-4o-mini Pricing)</h3>
+        <table class="mod-table">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Tokens</th>
+                    <th>Rate</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Text Analysis - Input</td>
+                    <td>4,050,000</td>
+                    <td>$0.15/1M</td>
+                    <td>$0.61</td>
+                </tr>
+                <tr>
+                    <td>Text Analysis - Output</td>
+                    <td>810,000</td>
+                    <td>$0.60/1M</td>
+                    <td>$0.49</td>
+                </tr>
+                <tr>
+                    <td>Image Analysis - Input</td>
+                    <td>1,039,500</td>
+                    <td>$0.15/1M</td>
+                    <td>$0.16</td>
+                </tr>
+                <tr>
+                    <td>Image Analysis - Output</td>
+                    <td>270,000</td>
+                    <td>$0.60/1M</td>
+                    <td>$0.16</td>
+                </tr>
+                <tr>
+                    <td>Moderation API</td>
+                    <td>18,000 calls</td>
+                    <td>Free</td>
+                    <td>$0.00</td>
+                </tr>
+                <tr style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); font-weight: 700;">
+                    <td><strong>TOTAL MONTHLY</strong></td>
+                    <td></td>
+                    <td></td>
+                    <td><strong>$1.42</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Cost Summary</h3>
+        <div class="deployment-grid">
+            <div class="deployment-card">
+                <div class="deployment-header">
+                    <div class="deployment-icon">📊</div>
+                    <div class="deployment-name">Base Estimate</div>
+                </div>
+                <div class="deployment-body">
+                    <div class="cost-section">
+                        <div class="cost-label">Monthly Cost</div>
+                        <div class="cost-value">$1.42</div>
+                        <div class="cost-period">OpenAI API only</div>
+                    </div>
+                </div>
+            </div>
+            <div class="deployment-card">
+                <div class="deployment-header" style="background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);">
+                    <div class="deployment-icon">🛡️</div>
+                    <div class="deployment-name">With Safety Margin</div>
+                </div>
+                <div class="deployment-body">
+                    <div class="cost-section">
+                        <div class="cost-label">Monthly Cost (+20%)</div>
+                        <div class="cost-value">$1.70</div>
+                        <div class="cost-period">Recommended budget</div>
+                    </div>
+                </div>
+            </div>
+            <div class="deployment-card">
+                <div class="deployment-header" style="background: linear-gradient(135deg, #c62828 0%, #b71c1c 100%);">
+                    <div class="deployment-icon">⚠️</div>
+                    <div class="deployment-name">Worst Case</div>
+                </div>
+                <div class="deployment-body">
+                    <div class="cost-section">
+                        <div class="cost-label">Monthly Cost (Max)</div>
+                        <div class="cost-value">$2.50</div>
+                        <div class="cost-period">All messages to AI</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <h4>Notes</h4>
+            <ul>
+                <li><strong>Moderation API is FREE</strong> - OpenAI provides this at no cost</li>
+                <li>Messages blocked by local filters don't consume GPT-4o-mini tokens</li>
+                <li>Short messages (&lt;20 chars) skip the sensitive content AI check</li>
+                <li>Image analysis uses "low detail" mode (85 tokens/image) for cost efficiency</li>
+                <li>Actual costs may be <strong>lower</strong> depending on message content patterns</li>
+            </ul>
+        </div>
+
+        <div class="page-footer">
+            <span>WhatsApp Bot - IHL Presentation</span>
+            <span>Page 9</span>
+        </div>
+    </div>
+
+</body>
+</html>
