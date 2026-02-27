@@ -30,6 +30,7 @@ Thumbs.db
 .vscode/
 .idea/
 .claude/
+claude.md
 
 # Environment variables
 .env
@@ -51,3 +52,4 @@ prompts.txt
 
 # Unused/deprecated files
 captcha.js
+nul
