@@ -1,6 +1,6 @@
 # WhatsApp Bot - Group Moderation & Management
 
-A powerful WhatsApp bot built with [Baileys](https://github.com/WhiskeySockets/Baileys) for group moderation, content filtering, user verification, and weekly analytics.
+A WhatsApp bot built with [Baileys](https://github.com/WhiskeySockets/Baileys) for group moderation, content filtering, user verification, and weekly analytics.
 
 ## Features
 
